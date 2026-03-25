@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+downloads/
+relatorio_*.html
+*.png
+fix_mapping*.py
+lista_empresas.txt
