@@ -5,7 +5,8 @@ URL: https://cvmweb.cvm.gov.br/SWB/sistemas/scw/exibedoc/Com_art_11_358/comunicC
 
 import httpx
 from bs4 import BeautifulSoup
-from models import NegociacaoDiretor
+from cvm_api.models import NegociacaoDiretor
+from cvm_api.errors import retry_on_transient
 
 BASE_URL = "https://cvmweb.cvm.gov.br/SWB/sistemas/scw/exibedoc/Com_art_11_358"
 SEARCH_URL = f"{BASE_URL}/comunicCiasAb.asp"
@@ -15,6 +16,7 @@ HEADERS = {
 }
 
 
+@retry_on_transient()
 async def buscar_negociacoes_diretores(
     nome_empresa: str = "",
     data_inicio: str = "",
@@ -23,16 +25,66 @@ async def buscar_negociacoes_diretores(
     """
     Busca comunicados de negociações de diretores/conselheiros.
 
+    Note: The CVM page is static and doesn't support server-side filtering.
+    Filters are applied client-side on the scraped results.
+
     Args:
-        nome_empresa: Nome da empresa
-        data_inicio: Data inicial DD/MM/YYYY
-        data_fim: Data final DD/MM/YYYY
+        nome_empresa: Filter by company name (substring, case-insensitive)
+        data_inicio: Filter start date DD/MM/YYYY
+        data_fim: Filter end date DD/MM/YYYY
     """
     async with httpx.AsyncClient(timeout=30, verify=False) as client:
         resp = await client.get(SEARCH_URL, headers=HEADERS)
         resp.raise_for_status()
 
-    return _parse_negociacoes(resp.text)
+    results = _parse_negociacoes(resp.text)
+
+    # Client-side filtering
+    if nome_empresa:
+        nome_lower = nome_empresa.lower()
+        results = [r for r in results if r.empresa and nome_lower in r.empresa.lower()]
+
+    if data_inicio or data_fim:
+        results = _filter_by_date(results, data_inicio, data_fim)
+
+    return results
+
+
+def _parse_date_br(date_str: str) -> tuple[int, int, int] | None:
+    """Parse DD/MM/YYYY to (year, month, day) tuple for comparison."""
+    if not date_str:
+        return None
+    parts = date_str.strip().split("/")
+    if len(parts) != 3:
+        return None
+    try:
+        return (int(parts[2]), int(parts[1]), int(parts[0]))
+    except ValueError:
+        return None
+
+
+def _filter_by_date(
+    results: list[NegociacaoDiretor],
+    data_inicio: str,
+    data_fim: str,
+) -> list[NegociacaoDiretor]:
+    """Filter results by date range (DD/MM/YYYY format)."""
+    start = _parse_date_br(data_inicio)
+    end = _parse_date_br(data_fim)
+    if not start and not end:
+        return results
+
+    filtered = []
+    for r in results:
+        d = _parse_date_br(r.data)
+        if d is None:
+            continue
+        if start and d < start:
+            continue
+        if end and d > end:
+            continue
+        filtered.append(r)
+    return filtered
 
 
 def _parse_negociacoes(html: str) -> list[NegociacaoDiretor]:

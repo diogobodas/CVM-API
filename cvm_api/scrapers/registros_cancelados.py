@@ -5,7 +5,7 @@ Página estática: /asp/cvmwww/opesp/RegCanc.asp
 
 import httpx
 from bs4 import BeautifulSoup
-from models import RegistroCancelado
+from cvm_api.models import RegistroCancelado
 
 URL = "https://sistemas.cvm.gov.br/asp/cvmwww/opesp/RegCanc.asp"
 

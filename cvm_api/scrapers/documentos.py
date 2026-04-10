@@ -3,9 +3,11 @@ Scraper para documentos de companhias abertas via ENET/RAD CVM.
 Endpoint AJAX: POST /ENET/frmConsultaExternaCVM.aspx/ListarDocumentos
 """
 
+import re
 import httpx
 from typing import Optional
-from models import Documento
+from cvm_api.models import Documento
+from cvm_api.errors import CVMParsingError, CVMConnectionError, retry_on_transient
 
 BASE_URL = "https://www.rad.cvm.gov.br/ENET"
 LISTAR_URL = f"{BASE_URL}/frmConsultaExternaCVM.aspx/ListarDocumentos"
@@ -52,6 +54,7 @@ TIPOS_PARTICIPANTE = {
 }
 
 
+@retry_on_transient()
 async def buscar_lista_empresas() -> dict:
     """Busca a lista completa de empresas registradas na CVM (do campo hdnEmpresas)."""
     async with httpx.AsyncClient(timeout=30, verify=False) as client:
@@ -59,12 +62,11 @@ async def buscar_lista_empresas() -> dict:
         resp.raise_for_status()
         html = resp.text
 
-    import re
+    import html as html_mod
     match = re.search(r'id="hdnEmpresas"[^>]*value="([^"]*)"', html)
     if not match:
-        return {}
+        raise CVMParsingError("Could not find hdnEmpresas field in ENET page")
 
-    import html as html_mod
     raw = html_mod.unescape(match.group(1))
     empresas = {}
     for entry in re.finditer(r"key:'C_(\d+)',\s*value:'(\d+)\s*-\s*([^']*)'", raw):
@@ -76,6 +78,7 @@ async def buscar_lista_empresas() -> dict:
     return empresas
 
 
+@retry_on_transient()
 async def buscar_documentos(
     empresa: str = "",
     data_de: str = "",
@@ -150,17 +153,16 @@ def _parse_documentos(data: dict) -> list[Documento]:
       5: data_referencia (com HTML), 6: data_entrega (com HTML), 7: status,
       8: versao, 9: modalidade, 10: acoes (HTML com links), 11: descricao_extra
     """
-    import re
-
     d = data.get("d", {})
     if isinstance(d, str):
         dados_raw = d
     elif isinstance(d, dict):
         if d.get("temErro"):
-            return []
+            erro_msg = d.get("msgErro", "Unknown CVM error")
+            raise CVMParsingError(f"CVM returned error: {erro_msg}")
         dados_raw = d.get("dados", "")
     else:
-        return []
+        raise CVMParsingError(f"Unexpected response format from CVM: {type(d)}")
 
     if not dados_raw:
         return []
@@ -235,6 +237,7 @@ def montar_url_download_cvm(num_sequencia: str, num_versao: str, numero_protocol
     )
 
 
+@retry_on_transient()
 async def baixar_documento(
     num_sequencia: str,
     num_versao: str,
@@ -254,7 +257,6 @@ async def baixar_documento(
     disposition = resp.headers.get("content-disposition", "")
     filename = "documento"
     if "filename=" in disposition:
-        import re
         m = re.search(r'filename=([^\s;]+)', disposition)
         if m:
             filename = m.group(1).strip('"')

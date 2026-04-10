@@ -19,13 +19,15 @@ from collections import OrderedDict
 sys.path.insert(0, ".")
 sys.stdout.reconfigure(encoding="utf-8")
 
-from scrapers.documentos import buscar_documentos
+from cvm_api.scrapers.documentos import buscar_documentos
+from cvm_api.company_registry import EMPRESAS, SETORES
 
 # ── Mapeamento Ticker BBG → (Nome, Código CVM) ────────────────────────────
-# Apenas empresas brasileiras listadas na CVM
+# Canonical source now in company_registry.py — imported above.
+# Legacy dict kept below commented out for reference.
 
-EMPRESAS = {
-    # Bancos — códigos verificados via buscar_lista_empresas + buscar_documentos
+# (Legacy EMPRESAS dict removed — now in company_registry.py)
+_EMPRESAS_LEGACY = {
     "ITUB": ("ITAU UNIBANCO", "019348"),
     "ITSA": ("ITAUSA", "007617"),
     "BBDC": ("BRADESCO", "000906"),
@@ -211,31 +213,7 @@ EMPRESAS = {
     "AERI": ("AERIS", "025283"),
 }
 
-# ── Setores ────────────────────────────────────────────────────────────────
-
-SETORES = OrderedDict([
-    ("Bancos", ["ITUB","ITSA","BBDC","BBAS","BRSR","SANB","BPAC","INBR","BPAN","PINE"]),
-    ("Seguros & Financeiras", ["B3SA","BBSE","CXSE","IRBR","PSSA","PAGS","STNE","TRAD","BRBI"]),
-    ("Aéreas", ["AZUL"]),
-    ("Telecom", ["VIVT","TIMS","OIBR","DESK","FIQE","BMOB"]),
-    ("Tecnologia", ["TOTS","VLID","POSI","LWSA"]),
-    ("Mineração & Siderurgia", ["VALE","BRAP","CMIN","CSNA","GGBR","GOAU","USIM","CBAV"]),
-    ("Celulose & Papel", ["SUZB","KLBN"]),
-    ("Petróleo & Gás", ["PETR","PRIO","BRAV","RECV","BRKM"]),
-    ("Distribuição de Combustíveis", ["VBBR","UGPA","RAIZ","CSAN"]),
-    ("Agronegócio", ["SMTO","JALL","AGRO","SLCE","VITT","TTEN"]),
-    ("Educação", ["COGN","SEER","YDUQ","ANIM","CSED"]),
-    ("Consumer Staples", ["ABEV","GMAT","ASAI","PCAR","MBRF","BEEF","MDIA","CAML"]),
-    ("Consumer Discretionary", ["LREN","AMER","MGLU","NATU","BHIA","AZZA","ALPA","GRND","AMAR","VULC","SBFG","CASH","VIVA","CEAB","LJQQ","TFCO","ALLD","INTB"]),
-    ("Serviços", ["SMFT","CVCB","RENT","VAMO","MOVI","SIMH","AMOB","GGPS"]),
-    ("Saúde", ["HYPE","FLRY","QUAL","HAPV","RDOR","MATD","ONCO","BLAU","ODPV","RADL","PNVL","DMVF","PGMN","DASA"]),
-    ("Logística", ["OPCT","MOTV","ECOR","RAIL","HBSA","JSLG","PRNR"]),
-    ("Industriais", ["EMBJ","MYPK","LEVE","WEGE","FRAS","POMO","RAPT","TUPY","MILS"]),
-    ("Construtoras", ["CYRE","MRVE","TEND","DIRR","PLPL","CURY","EVEN","EZTC","HBOR","JHSF","MDNE","TRIS","MTRE","LAVV","DXCO"]),
-    ("Shoppings", ["MULT","IGTI","ALOS"]),
-    ("Utilities - Energia", ["EQTL","ENGI","NEOE","LIGT","CPFE","CMIG","COCE","TAEE","ISAE","ALUP","AURE","EGIE","CPLE","ENEV"]),
-    ("Utilities - Saneamento", ["AMBP","ORVR","SBSP","CSMG","SAPR","AERI"]),
-])
+# (Legacy SETORES dict removed — now in company_registry.py)
 
 
 # ── Categorias excluídas do relatório ──────────────────────────────────────

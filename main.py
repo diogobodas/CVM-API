@@ -14,8 +14,8 @@ from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.responses import Response
 from typing import Optional
 
-from models import CompanhiaCadastro, Documento, RegistroCancelado, NegociacaoDiretor
-from scrapers.documentos import (
+from cvm_api.models import CompanhiaCadastro, Documento, RegistroCancelado, NegociacaoDiretor
+from cvm_api.scrapers.documentos import (
     buscar_documentos,
     buscar_lista_empresas,
     baixar_documento,
@@ -23,9 +23,10 @@ from scrapers.documentos import (
     CATEGORIAS_EVENTUAIS,
     TIPOS_PARTICIPANTE,
 )
-from scrapers.cadastro import buscar_cadastro, obter_captcha_image, TIPOS
-from scrapers.registros_cancelados import buscar_registros_cancelados
-from scrapers.negociacoes import buscar_negociacoes_diretores
+from cvm_api.scrapers.cadastro import buscar_cadastro, obter_captcha_image, TIPOS
+from cvm_api.scrapers.registros_cancelados import buscar_registros_cancelados
+from cvm_api.scrapers.negociacoes import buscar_negociacoes_diretores
+from cvm_api.router_v2 import router as v2_router
 
 app = FastAPI(
     title="CVM Companhias API",
@@ -33,8 +34,10 @@ app = FastAPI(
         "API para consulta de dados de Companhias Abertas direto dos sistemas da CVM. "
         "Dados em tempo real via web scraping."
     ),
-    version="1.0.0",
+    version="2.0.0",
 )
+
+app.include_router(v2_router, prefix="/v2")
 
 
 # ── Documentos (ENET) ──────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ Nota: este endpoint usa CAPTCHA. Oferecemos busca via ENET como alternativa.
 import httpx
 from bs4 import BeautifulSoup
 from typing import Optional
-from models import CompanhiaCadastro
+from cvm_api.models import CompanhiaCadastro
 
 BASE_URL = "https://sistemas.cvm.gov.br/asp/cvmwww/cadastro"
 FORM_URL = f"{BASE_URL}/formCad.asp"
