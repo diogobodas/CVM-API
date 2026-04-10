@@ -198,11 +198,13 @@ def _parse_documentos(data: dict) -> list[Documento]:
 
             # Extrair params de OpenDownloadDocumentos('seq','ver','proto','tipo')
             dl_match = re.search(
-                r"OpenDownloadDocumentos\('(\d+)','(\d+)','(\d+)','([^']+)'\)", acoes_html
+                r"OpenDownloadDocumentos\('(\d+)','(\d+)','([^']+)','([^']+)'\)", acoes_html
             )
             if dl_match:
                 num_sequencia = dl_match.group(1)
                 num_versao = dl_match.group(2)
+                if not numero_protocolo:
+                    numero_protocolo = dl_match.group(3)
                 desc_tipo = dl_match.group(4)
 
         doc = Documento(
